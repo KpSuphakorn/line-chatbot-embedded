@@ -1,5 +1,5 @@
 from linebot.v3.messaging import TextMessage, Emoji
-from utils import count_water_times_today
+from utils import count_water_times_today, summarize_emotion_and_water
 
 def reponse_message(event):
     """
@@ -31,5 +31,10 @@ def reponse_message(event):
         else:
             text_response = "ไม่มีข้อมูลการรดน้ำสำหรับวันนี้"
         return TextMessage(text=text_response)
+
+    if request_message.startswith("ดูภาพรวม"):
+        # Generate summary without auto-sending
+        summary = summarize_emotion_and_water(auto_send=False)
+        return TextMessage(text=summary)
 
     return None

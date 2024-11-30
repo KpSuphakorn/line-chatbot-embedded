@@ -58,7 +58,7 @@ def handle_message(event: MessageEvent):
         )
 
 scheduler = BackgroundScheduler()
-trigger = CronTrigger(hour=15, minute=37)
+trigger = CronTrigger(hour=23, minute=41)
 scheduler.add_job(summarize_emotion_and_water, trigger)
 scheduler.start()
 

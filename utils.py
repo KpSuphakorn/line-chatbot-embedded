@@ -28,10 +28,12 @@ def count_water_times_today():
     water_times_count = len(record["water_time"])
     return today_date, water_times_count
 
-def summarize_emotion_and_water():
+def summarize_emotion_and_water(auto_send=True):
     """
     Generate a comprehensive daily summary of plant care, emotions, and watering
-    Sends detailed summary via LINE to all registered users
+    
+    :param auto_send: If True, sends summary to all registered users via LINE
+    :return: Summary string
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
     
@@ -88,4 +90,8 @@ def summarize_emotion_and_water():
     
     print(summary)
     
-    send_line_summary(summary)
+    # Send summary to all users only if auto_send is True
+    if auto_send:
+        send_line_summary(summary)
+    
+    return summary
