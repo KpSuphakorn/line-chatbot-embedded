@@ -1,4 +1,4 @@
-# line-chatbot-embedded
+# LINE-Bot-PythonDev
 
 ## What is LINE Messaging API
 ![line-overview](img/line-overview.png)
