@@ -20,7 +20,6 @@ from utils import store_user_id, summarize_emotion_and_water
 
 app = FastAPI()
 
-# LINE Configuration
 configuration = Configuration(access_token=ACCESS_TOKEN)
 handler = WebhookHandler(channel_secret=CHANNEL_SECRET)
 
@@ -48,7 +47,6 @@ def handle_message(event: MessageEvent):
     user_id = event.source.user_id 
     store_user_id(user_id)
 
-    # Respond to message
     reply_message = reponse_message(event)
 
     if reply_message:
@@ -59,9 +57,8 @@ def handle_message(event: MessageEvent):
             )
         )
 
-# Set up scheduler for daily summary
 scheduler = BackgroundScheduler()
-trigger = CronTrigger(hour=14, minute=00)
+trigger = CronTrigger(hour=15, minute=37)
 scheduler.add_job(summarize_emotion_and_water, trigger)
 scheduler.start()
 

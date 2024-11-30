@@ -10,7 +10,6 @@ def reponse_message(event):
     """
     request_message = event.message.text
     
-    # Hello response with emojis
     if request_message.lower() == "hello":
         emoji_data = [
             {"index": 0, "productId": "5ac1bfd5040ab15980c9b435", "emojiId": "002"},
@@ -21,11 +20,9 @@ def reponse_message(event):
         text_response = "$ Hello/สวัสดีครับ from PythonDevBot $"
         return TextMessage(text=text_response, emojis=emojis)
 
-    # Weather forecast response
     if request_message.startswith("พยากรณ์อากาศ"):
         return TextMessage(text="ขออภัย ตอนนี้ยังไม่มีข้อมูลพยากรณ์อากาศ")
 
-    # Water tracking response
     if request_message.startswith("รดน้ำ"):
         result = count_water_times_today()
         if result:
