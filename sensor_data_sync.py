@@ -4,15 +4,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-# Load environment variables
 load_dotenv()
+
+last_sensor_id = None
 
 def fetch_sensor_data():
     """
     Fetch sensor data from Firebase API
     
-    :return: Dictionary of sensor data or None if fetch fails
+    :return: Tuple of (sensor_data, sensor_id) or (None, None) if fetch fails
     """
+    global last_sensor_id
     try:
         url = "https://embedded-project-1f031-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json"
         
@@ -23,43 +25,58 @@ def fetch_sensor_data():
         
         sensor_data['timestamp'] = datetime.now()
         
-        return sensor_data
+        current_sensor_id = sensor_data.get('id')
+        
+        return sensor_data, current_sensor_id
     
     except requests.RequestException as e:
         print(f"Error fetching sensor data: {e}")
-        return None
+        return None, None
 
-def store_sensor_data(sensor_data):
+def store_sensor_data(sensor_data, current_sensor_id):
     """
-    Store sensor data in MongoDB
+    Store sensor data in MongoDB only if there's a change in sensor ID
     
     :param sensor_data: Dictionary of sensor data
+    :param current_sensor_id: Unique identifier to detect changes
     """
+    global last_sensor_id
+    
     try:
-        MONGODB_URI = os.getenv("MONGODB_URI")
-        mongo_client = MongoClient(MONGODB_URI)
-        
-        db = mongo_client["emotion_detection"]
-        sensor_collection = db["sensor_values"]
-        
-        if sensor_data:
-            result = sensor_collection.insert_one(sensor_data)
-            print(f"Sensor data stored successfully. Inserted ID: {result.inserted_id}")
+        if (current_sensor_id is not None and 
+            current_sensor_id != last_sensor_id):
+            
+            MONGODB_URI = os.getenv("MONGODB_URI")
+            mongo_client = MongoClient(MONGODB_URI)
+            
+            try:
+                db = mongo_client["emotion_detection"]
+                sensor_collection = db["sensor_values"]
+                
+                result = sensor_collection.insert_one(sensor_data)
+                print(f"New sensor data stored. Inserted ID: {result.inserted_id}")
+                
+                last_sensor_id = current_sensor_id
+            
+            except Exception as e:
+                print(f"Error inserting sensor data: {e}")
+            
+            finally:
+                mongo_client.close()
         else:
-            print("No sensor data to store.")
+            print("No new sensor data to store.")
     
     except Exception as e:
-        print(f"Error storing sensor data in MongoDB: {e}")
-    finally:
-        mongo_client.close()
+        print(f"Error processing sensor data: {e}")
 
 def main():
     """
     Main function to fetch and store sensor data
     """
-    sensor_data = fetch_sensor_data()
+    sensor_data, current_sensor_id = fetch_sensor_data()
     
-    store_sensor_data(sensor_data)
+    if sensor_data:
+        store_sensor_data(sensor_data, current_sensor_id)
 
 if __name__ == "__main__":
     main()
