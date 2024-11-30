@@ -12,11 +12,13 @@ from linebot.v3.messaging import (
     TextMessage
 )
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 
 from config import ACCESS_TOKEN, CHANNEL_SECRET
 from response_message import reponse_message
 from utils import store_user_id, summarize_emotion_and_water
+from sensor_data_sync import fetch_sensor_data, store_sensor_data
 
 app = FastAPI()
 
@@ -57,9 +59,21 @@ def handle_message(event: MessageEvent):
             )
         )
 
+# Create scheduler for multiple tasks
 scheduler = BackgroundScheduler()
-trigger = CronTrigger(hour=23, minute=41)
-scheduler.add_job(summarize_emotion_and_water, trigger)
+
+# Existing summary job
+summary_trigger = CronTrigger(hour=4, minute=42)
+scheduler.add_job(summarize_emotion_and_water, summary_trigger)
+
+# New sensor data fetch job - every 1 minute
+sensor_trigger = IntervalTrigger(minutes=1)
+def fetch_and_store_sensor_data():
+    sensor_data = fetch_sensor_data()
+    store_sensor_data(sensor_data)
+
+scheduler.add_job(fetch_and_store_sensor_data, sensor_trigger)
+
 scheduler.start()
 
 if __name__ == "__main__":

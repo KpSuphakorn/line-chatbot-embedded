@@ -32,7 +32,7 @@ def reponse_message(event):
             text_response = "ไม่มีข้อมูลการรดน้ำสำหรับวันนี้"
         return TextMessage(text=text_response)
 
-    if request_message.startswith("ดูภาพรวม"):
+    if request_message.startswith("ภาพรวม"):
         # Generate summary without auto-sending
         summary = summarize_emotion_and_water(auto_send=False)
         return TextMessage(text=summary)

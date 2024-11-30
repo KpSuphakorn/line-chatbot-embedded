@@ -74,8 +74,8 @@ def summarize_emotion_and_water(auto_send=True):
     water_data = WATER_COLLECTION.find_one({"date": current_date})
     water_count = len(water_data["water_time"]) if water_data and "water_time" in water_data else 0
     
-    temperature = 22.0
-    humidity = 60.0
+    temperature = 22.0 ######import from mongodb (TODO)
+    humidity = 60.0 ######import from mongodb (TODO)
     
     summary = f"🌱 Plant Care Update for Today: 🌱\n\n" \
               f"🌿 Watering: You've watered the plant {water_count} times today.\n" \
