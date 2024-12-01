@@ -9,32 +9,25 @@ def reponse_message(event):
     :return: TextMessage or None
     """
     request_message = event.message.text
-    
-    if request_message.lower() == "hello":
-        emoji_data = [
-            {"index": 0, "productId": "5ac1bfd5040ab15980c9b435", "emojiId": "002"},
-            {"index": 37, "productId": "5ac21c46040ab15980c9b442", "emojiId": "002"},
-        ]
-        emojis = [Emoji(**emoji) for emoji in emoji_data]
 
-        text_response = "$ Hello/สวัสดีครับ from PythonDevBot $"
-        return TextMessage(text=text_response, emojis=emojis)
+    if request_message.startswith("Summary"):
+        summary = summarize_emotion_and_water(auto_send=False)
+        return TextMessage(text=summary)
 
-    if request_message.startswith("พยากรณ์อากาศ"):
-        return TextMessage(text="ขออภัย ตอนนี้ยังไม่มีข้อมูลพยากรณ์อากาศ")
-
-    if request_message.startswith("รดน้ำ"):
+    if request_message.startswith("Watering"):
         result = count_water_times_today()
         if result:
             today_date, water_count = result
-            text_response = f"วันที่: {today_date}\nจำนวนครั้ง: {water_count}"
+            text_response = f"Good job! 🌱 You have watered your plant {water_count} times today. Keep up the great work in taking care of your green friend!"
         else:
-            text_response = "ไม่มีข้อมูลการรดน้ำสำหรับวันนี้"
+            text_response = "I'm thirsty! 🌿 Water me before it's too late!"
         return TextMessage(text=text_response)
+    
+    if request_message.startswith("Emotions"):
+        return TextMessage(text="ขออภัย ตอนนี้ยังไม่มีข้อมูลพยากรณ์อากาศ")
 
-    if request_message.startswith("ภาพรวม"):
-        # Generate summary without auto-sending
-        summary = summarize_emotion_and_water(auto_send=False)
-        return TextMessage(text=summary)
+    if request_message.startswith("Environment"):
+        return TextMessage(text="ขออภัย ตอนนี้ยังไม่มีข้อมูลพยากรณ์อากาศ")
+    "Here's an update on your room's environment: 🌡️ Temperature: [temperature]°C | 💧 Humidity: [humidity]%. Stay comfortable, and let's keep the plant happy!"
 
     return None

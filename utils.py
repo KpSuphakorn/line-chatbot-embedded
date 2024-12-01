@@ -1,6 +1,13 @@
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
+from notifications import send_line_summary
+from pytz import timezone
 from datetime import datetime, timedelta
 from config import EMOTIONS_COLLECTION, WATER_COLLECTION, USERS_COLLECTION
-from notifications import send_line_summary
+
+load_dotenv()
+tz = timezone("Asia/Bangkok")
 
 def store_user_id(user_id):
     """
@@ -95,3 +102,62 @@ def summarize_emotion_and_water(auto_send=True):
         send_line_summary(summary)
     
     return summary
+
+def check_sensor_conditions():
+    """
+    Check sensor conditions and send notifications if thresholds are exceeded
+    """
+    try:
+        MONGODB_URI = os.getenv("MONGODB_URI")
+        mongo_client = MongoClient(MONGODB_URI)
+        
+        try:
+            db = mongo_client["emotion_detection"]
+            sensor_averages_collection = db["sensor_averages"]
+            
+            # Get today's date
+            today = datetime.now(tz).strftime("%Y-%m-%d")
+            
+            # Fetch today's sensor data
+            sensor_data = sensor_averages_collection.find_one({"date": today})
+            
+            if not sensor_data:
+                print("No sensor data found for today.")
+                return
+            
+            averages = sensor_data.get('averages', {})
+            notifications = []
+            
+            # Temperature check
+            temperature = averages.get('temperature', 0)
+            if temperature < 20:
+                notifications.append(f"⚠️ อากาศหนาวเกินไป อุณหภูมิตอนนี้ {temperature}°C")
+            elif temperature > 35:
+                notifications.append(f"⚠️ อากาศร้อนเกินไป อุณหภูมิตอนนี้ {temperature}°C")
+            
+            # Light intensity check (assuming lower values mean less light)
+            light_intensity = averages.get('lightIntensity_val', 0)
+            if light_intensity < 1000:
+                notifications.append(f"⚠️ แสงในห้องค่อนข้างน้อย ค่าความสว่างตอนนี้ {light_intensity}")
+            
+            # Air quality check
+            air_quality = averages.get('airQuality_val', 0)
+            if air_quality > 1500:
+                notifications.append(f"⚠️ คุณภาพอากาศไม่ดี ค่าคุณภาพอากาศตอนนี้ {air_quality}")
+            
+            # Send notifications if any
+            if notifications:
+                notification_message = "แจ้งเตือนสภาพแวดล้อม:\n" + "\n".join(notifications)
+                send_line_summary(notification_message)
+                print("Sent environment notifications:", notification_message)
+            else:
+                print("No critical sensor conditions detected.")
+        
+        except Exception as e:
+            print(f"Error in check_sensor_conditions: {e}")
+        
+        finally:
+            mongo_client.close()
+    
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
