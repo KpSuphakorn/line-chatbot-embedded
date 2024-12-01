@@ -27,18 +27,22 @@ handler = WebhookHandler(channel_secret=CHANNEL_SECRET)
 
 @app.post("/callback")
 async def callback(request: Request, x_line_signature: str = Header(None)):
-    """
-    Webhook callback for LINE messaging API
-    """
-    body = await request.body()
-    body_str = body.decode('utf-8')
     try:
+        body = await request.body()
+        body_str = body.decode('utf-8')
+        
+        print("Request Details:")
+        print(f"Body: {body_str}")
+        print(f"Signature: {x_line_signature}")
+        
         handler.handle(body_str, x_line_signature)
+        return {"status": "OK"}
     except InvalidSignatureError:
-        print("Invalid signature. Please check your channel access token/channel secret.")
-        raise HTTPException(status_code=400, detail="Invalid signature.")
-
-    return 'OK'
+        print("Invalid signature detected")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event: MessageEvent):
