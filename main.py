@@ -18,7 +18,7 @@ from apscheduler.triggers.cron import CronTrigger
 from config import ACCESS_TOKEN, CHANNEL_SECRET
 from response_message import reponse_message
 from utils import store_user_id, summarize_emotion_and_water
-from sensor_data_sync import fetch_sensor_data, store_sensor_data
+from sensor_data_sync import fetch_sensor_data, calculate_and_update_averages
 
 app = FastAPI()
 
@@ -71,7 +71,7 @@ sensor_trigger = IntervalTrigger(seconds=5)
 def fetch_and_store_sensor_data():
     sensor_data, current_sensor_id = fetch_sensor_data()
     if sensor_data and current_sensor_id:
-        store_sensor_data(sensor_data, current_sensor_id)
+        calculate_and_update_averages(sensor_data, current_sensor_id)
 
 scheduler.add_job(fetch_and_store_sensor_data, sensor_trigger)
 
