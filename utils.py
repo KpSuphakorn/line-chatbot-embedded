@@ -5,6 +5,7 @@ from notifications import send_line_summary
 from pytz import timezone
 from datetime import datetime, timedelta
 from config import EMOTIONS_COLLECTION, WATER_COLLECTION, USERS_COLLECTION
+from sensor_data_sync import fetch_sensor_data
 
 load_dotenv()
 tz = timezone("Asia/Bangkok")
@@ -82,12 +83,19 @@ def summarize_emotion_and_water(auto_send=True):
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
     
+    today = datetime.now(tz).isoformat()
+    todayYMD = today[0:10]
+    tmr = datetime.now(tz) + timedelta(days=1)
+    tmrYMD = tmr.isoformat()[0:10]
     total_emotions = EMOTIONS_COLLECTION.count_documents({
         "date_time": {
-            "$gte": datetime.strptime(current_date, "%Y-%m-%d"), 
-            "$lt": datetime.strptime(current_date, "%Y-%m-%d") + timedelta(days=1)
+            "$gte": todayYMD + "T00:00:00+07:00",
+            "$lt": tmrYMD + "T00:00:00+07:00"
         }
     })
+    
+    print(total_emotions)
+    print(datetime.strptime(current_date, "%Y-%m-%d"))
     
     emotion_counts = {}
     if total_emotions > 0:
@@ -95,8 +103,8 @@ def summarize_emotion_and_water(auto_send=True):
             {
                 "$match": {
                     "date_time": {
-                        "$gte": datetime.strptime(current_date, "%Y-%m-%d"), 
-                        "$lt": datetime.strptime(current_date, "%Y-%m-%d") + timedelta(days=1)
+                        "$gte": todayYMD + "T00:00:00+07:00", 
+                        "$lt": tmrYMD + "T00:00:00+07:00"
                     }
                 }
             },
@@ -147,59 +155,36 @@ def summarize_emotion_and_water(auto_send=True):
 
 def check_sensor_conditions():
     """
-    Check sensor conditions and send notifications if thresholds are exceeded
+    Check real-time sensor conditions and send notifications if thresholds are exceeded
     """
-    try:
-        MONGODB_URI = os.getenv("MONGODB_URI")
-        mongo_client = MongoClient(MONGODB_URI)
-        
-        try:
-            db = mongo_client["emotion_detection"]
-            sensor_averages_collection = db["sensor_averages"]
-            
-            # Get today's date
-            today = datetime.now(tz).strftime("%Y-%m-%d")
-            
-            # Fetch today's sensor data
-            sensor_data = sensor_averages_collection.find_one({"date": today})
-            
-            if not sensor_data:
-                print("No sensor data found for today.")
-                return
-            
-            averages = sensor_data.get('averages', {})
-            notifications = []
-            
-            # Temperature check
-            temperature = averages.get('temperature', 0)
-            if temperature < 20:
-                notifications.append(f"⚠️ อากาศหนาวเกินไป อุณหภูมิตอนนี้ {temperature}°C")
-            elif temperature > 35:
-                notifications.append(f"⚠️ อากาศร้อนเกินไป อุณหภูมิตอนนี้ {temperature}°C")
-            
-            # Light intensity check (assuming lower values mean less light)
-            light_intensity = averages.get('lightIntensity_val', 0)
-            if light_intensity < 1000:
-                notifications.append(f"⚠️ แสงในห้องค่อนข้างน้อย ค่าความสว่างตอนนี้ {light_intensity}")
-            
-            # Air quality check
-            air_quality = averages.get('airQuality_val', 0)
-            if air_quality > 1500:
-                notifications.append(f"⚠️ คุณภาพอากาศไม่ดี ค่าคุณภาพอากาศตอนนี้ {air_quality}")
-            
-            # Send notifications if any
-            if notifications:
-                notification_message = "แจ้งเตือนสภาพแวดล้อม:\n" + "\n".join(notifications)
-                send_line_summary(notification_message)
-                print("Sent environment notifications:", notification_message)
-            else:
-                print("No critical sensor conditions detected.")
-        
-        except Exception as e:
-            print(f"Error in check_sensor_conditions: {e}")
-        
-        finally:
-            mongo_client.close()
-    
-    except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
+    sensor_data, sensor_id = fetch_sensor_data()  # Fetch real-time data
+    if not sensor_data:
+        print("No real-time sensor data found.")
+        return
+
+    notifications = []
+
+    # Temperature check
+    temperature = sensor_data.get('temperature', 0)
+    if temperature < 20:
+        notifications.append(f"⚠️ Too cold! Current temperature is {temperature}°C 🥶")
+    elif temperature > 35:
+        notifications.append(f"⚠️ Too hot! Current temperature is {temperature}°C 🥵")
+
+    # Light intensity check
+    light_intensity = sensor_data.get('lightIntensity_val', 0)
+    if light_intensity < 300:
+        notifications.append(f"⚠️ Low light in the room! Current brightness level is {light_intensity} lux 💡")
+
+    # Air quality check
+    air_quality = sensor_data.get('airQuality_val', 0)
+    if air_quality > 1536:
+        notifications.append(f"⚠️ Poor air quality detected! Current air quality index is {air_quality} 😷")
+
+    # Send notifications if any
+    if notifications:
+        notification_message = "🌿 **Real-Time Environment Alerts:**\n" + "\n".join(notifications)
+        send_line_summary(notification_message)
+        print("Sent real-time environment notifications:", notification_message)
+    else:
+        print("No critical real-time sensor conditions detected. 🌟")
