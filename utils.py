@@ -35,6 +35,44 @@ def count_water_times_today():
     water_times_count = len(record["water_time"])
     return today_date, water_times_count
 
+def get_latest_sensor_averages():
+    """
+    Retrieve the latest sensor averages from MongoDB
+    
+    :return: Tuple of (temperature, humidity)
+    """
+    try:
+        MONGODB_URI = os.getenv("MONGODB_URI")
+        mongo_client = MongoClient(MONGODB_URI)
+        
+        try:
+            db = mongo_client["emotion_detection"]
+            sensor_averages_collection = db["sensor_averages"]
+            
+            # Get today's date
+            today = datetime.now(tz).strftime("%Y-%m-%d")
+            
+            # Fetch today's sensor data
+            sensor_data = sensor_averages_collection.find_one({"date": today})
+            
+            if sensor_data and 'averages' in sensor_data:
+                temperature = sensor_data['averages'].get('temperature', 22.0)
+                humidity = sensor_data['averages'].get('humidity', 60.0)
+                return temperature, humidity
+            
+            return 22.0, 60.0  # Default values if no data found
+        
+        except Exception as e:
+            print(f"Error fetching sensor averages: {e}")
+            return 22.0, 60.0
+        
+        finally:
+            mongo_client.close()
+    
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
+        return 22.0, 60.0
+
 def summarize_emotion_and_water(auto_send=True):
     """
     Generate a comprehensive daily summary of plant care, emotions, and watering
@@ -81,19 +119,23 @@ def summarize_emotion_and_water(auto_send=True):
     water_data = WATER_COLLECTION.find_one({"date": current_date})
     water_count = len(water_data["water_time"]) if water_data and "water_time" in water_data else 0
     
-    temperature = 22.0 ######import from mongodb (TODO)
-    humidity = 60.0 ######import from mongodb (TODO)
+    # Fetch latest temperature and humidity
+    temperature, humidity = get_latest_sensor_averages()
     
     summary = f"🌱 Plant Care Update for Today: 🌱\n\n" \
-              f"🌿 Watering: You've watered the plant {water_count} times today.\n" \
-              f"🌡️ Temperature: Current temperature is {temperature}°C.\n" \
-              f"💨 Humidity: Current humidity is {humidity}%.\n\n" \
-              f"Emotion Analysis for Today:\n" \
-              f"😀 Happy: {emotion_counts.get('happy', {'percentage': 0})['percentage']}%\n" \
-              f"😠 Angry: {emotion_counts.get('angry', {'percentage': 0})['percentage']}%\n" \
-              f"😢 Sad: {emotion_counts.get('sad', {'percentage': 0})['percentage']}%\n" \
-              f"🙂 Neutral: {emotion_counts.get('neutral', {'percentage': 0})['percentage']}%\n\n" \
-              f"Keep it up! 🌱"
+            f"🌿 Watering: You've watered the plant {water_count} times today.\n" \
+            f"🌡️ Temperature: Current temperature is {round(temperature)}°C.\n" \
+            f"💨 Humidity: Current humidity is {round(humidity)}%.\n\n" \
+            f"Emotion Analysis for Today:\n" \
+            f"😀 Happy: {emotion_counts.get('happy', {'percentage': 0})['percentage']}%\n" \
+            f"😠 Angry: {emotion_counts.get('angry', {'percentage': 0})['percentage']}%\n" \
+            f"😢 Sad: {emotion_counts.get('sad', {'percentage': 0})['percentage']}%\n" \
+            f"🙂 Neutral: {emotion_counts.get('neutral', {'percentage': 0})['percentage']}%\n" \
+            f"😨 Fear: {emotion_counts.get('fear', {'percentage': 0})['percentage']}%\n" \
+            f"🤢 Disgust: {emotion_counts.get('disgust', {'percentage': 0})['percentage']}%\n" \
+            f"😲 Surprise: {emotion_counts.get('surprise', {'percentage': 0})['percentage']}%\n\n" \
+            f"Keep it up! 🌱"
+
     
     print(summary)
     
