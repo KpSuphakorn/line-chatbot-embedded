@@ -4,11 +4,14 @@ from datetime import datetime, date
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import statistics
+from pytz import timezone
 
 load_dotenv()
 
 # Global variable to keep track of the last sensor ID
 last_sensor_id = None
+
+tz = timezone("Asia/Bangkok")
 
 def fetch_sensor_data():
     """
@@ -23,7 +26,7 @@ def fetch_sensor_data():
         response.raise_for_status()
         
         sensor_data = response.json()
-        sensor_data['timestamp'] = datetime.now()
+        sensor_data['timestamp'] = datetime.now(tz).isoformat()
         
         current_sensor_id = sensor_data.get('id')
         
@@ -53,8 +56,8 @@ def calculate_and_update_averages(current_data, current_sensor_id):
             if (current_sensor_id is not None and 
                 current_sensor_id != last_sensor_id):
 
-                today = date.today().isoformat()
-
+                now = datetime.now(tz).isoformat()
+                today = now[0:10]
                 today_record = sensor_averages_collection.find_one({
                     'date': today
                 })
@@ -63,7 +66,7 @@ def calculate_and_update_averages(current_data, current_sensor_id):
                     'date': today,
                     'id': current_sensor_id,
                     'count': 1,
-                    'timestamp': datetime.now(),
+                    'timestamp': datetime.now(tz).isoformat(),
                     'averages': {},
                     'min_values': {},
                     'max_values': {}
