@@ -10,6 +10,8 @@ from sensor_data_sync import fetch_sensor_data
 load_dotenv()
 tz = timezone("Asia/Bangkok")
 
+last_sensor_id = None
+
 def store_user_id(user_id):
     """
     Store user ID in the database if it doesn't exist
@@ -157,34 +159,44 @@ def check_sensor_conditions():
     """
     Check real-time sensor conditions and send notifications if thresholds are exceeded
     """
-    sensor_data, sensor_id = fetch_sensor_data()  # Fetch real-time data
-    if not sensor_data:
-        print("No real-time sensor data found.")
-        return
+    global last_sensor_id
 
-    notifications = []
+    sensor_data, current_sensor_id = fetch_sensor_data()  # Fetch real-time data
+    
+    if (current_sensor_id is not None and 
+        current_sensor_id != last_sensor_id):
+        
+        if not sensor_data:
+            print("No real-time sensor data found.")
+            return
 
-    # Temperature check
-    temperature = sensor_data.get('temperature', 0)
-    if temperature < 20:
-        notifications.append(f"⚠️ Too cold! Current temperature is {temperature}°C 🥶")
-    elif temperature > 35:
-        notifications.append(f"⚠️ Too hot! Current temperature is {temperature}°C 🥵")
+        notifications = []
 
-    # Light intensity check
-    light_intensity = sensor_data.get('lightIntensity_val', 0)
-    if light_intensity < 300:
-        notifications.append(f"⚠️ Low light in the room! Current brightness level is {light_intensity} lux 💡")
+        # Temperature check
+        temperature = sensor_data.get('temperature', 0)
+        if temperature < 20:
+            notifications.append(f"⚠️ Too cold! Current temperature is {temperature}°C 🥶")
+        elif temperature > 35:
+            notifications.append(f"⚠️ Too hot! Current temperature is {temperature}°C 🥵")
 
-    # Air quality check
-    air_quality = sensor_data.get('airQuality_val', 0)
-    if air_quality > 1536:
-        notifications.append(f"⚠️ Poor air quality detected! Current air quality index is {air_quality} 😷")
+        # Light intensity check
+        light_intensity = sensor_data.get('lightIntensity_val', 0)
+        if light_intensity < 300:
+            notifications.append(f"⚠️ Low light in the room! Current brightness level is {light_intensity} lux 💡")
 
-    # Send notifications if any
-    if notifications:
-        notification_message = "🌿 **Real-Time Environment Alerts:**\n" + "\n".join(notifications)
-        send_line_summary(notification_message)
-        print("Sent real-time environment notifications:", notification_message)
-    else:
+        # Air quality check
+        air_quality = sensor_data.get('airQuality_val', 0)
+        if air_quality > 1536:
+            notifications.append(f"⚠️ Poor air quality detected! Current air quality index is {air_quality} 😷")
+
+        # Send notifications if any
+        if notifications:
+            notification_message = "🌿 **Real-Time Environment Alerts:**\n" + "\n".join(notifications)
+            send_line_summary(notification_message)
+            print("Sent real-time environment notifications:", notification_message)
+        
+        # Update the last sensor ID
+        last_sensor_id = current_sensor_id
         print("No critical real-time sensor conditions detected. 🌟")
+    else:
+        print("No new sensor data to process.")
