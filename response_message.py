@@ -113,10 +113,8 @@ def reponse_message(event):
         return TextMessage(text=response_text)
 
     if request_message.startswith("Environment"):
-        # ดึงข้อมูลอุณหภูมิและความชื้น
         temperature, humidity = get_latest_sensor_averages()
         
-        # เพิ่มข้อความตอบกลับ
         response_text = (
             f"Here's an update on your room's environment: 🌡️ Temperature: {round(temperature)}°C | 💧 Humidity: {round(humidity)}%. "
             "Stay comfortable, and let's keep the plant happy!"

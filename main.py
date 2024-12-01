@@ -62,10 +62,11 @@ def handle_message(event: MessageEvent):
 # Create scheduler for multiple tasks
 scheduler = BackgroundScheduler()
 
-# Existing summary job
+# Existing summary job - every 5 pm
 summary_trigger = CronTrigger(hour=5, minute=00)
 scheduler.add_job(summarize_emotion_and_water, summary_trigger)
 
+# every 30 minute
 conditions_trigger = IntervalTrigger(minutes=30)
 scheduler.add_job(check_sensor_conditions, conditions_trigger)
 
