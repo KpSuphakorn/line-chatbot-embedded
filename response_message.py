@@ -96,11 +96,10 @@ def reponse_message(event):
         
         emotion_responses = {
             "neutral": "You're feeling neutral today. 🙂 A peaceful vibe for you and your plant!",
-            "calm": "You're feeling calm today. 🌼 A peaceful vibe for you and your plant!",
-            "sad": "It seems like today’s a bit tough. 😔 You're feeling sad, but don’t worry, your plant’s here for you too!",
-            "fear": "Feeling a bit scared today? 😟 You’re experiencing fear, but remember, everything will be okay. Your plant is here to calm your space!",
+            "sad": "It seems like today’s a bit tough. 😢 You're feeling sad, but don’t worry, your plant’s here for you too!",
+            "fear": "Feeling a bit scared today? 😨 You’re experiencing fear, but remember, everything will be okay. Your plant is here to calm your space!",
             "angry": "It looks like you're feeling angry today. 😠 Try to take a deep breath, and let’s give your plant some love—it might help!",
-            "happy": "How's your day going? 😊 Today, you're feeling happy! Keep that positive energy flowing for a happy, healthy plant!",
+            "happy": "How's your day going? 😀 Today, you're feeling happy! Keep that positive energy flowing for a happy, healthy plant!",
             "surprise": "Wow! You're feeling surprised today. 😲 Let that exciting energy brighten your day and your plant’s too!",
             "disgust": "It seems you’re feeling disgusted today. 🤢 Remember, it’s okay to step back, breathe, and refresh your mind. Your plant’s here to help!"
         }
