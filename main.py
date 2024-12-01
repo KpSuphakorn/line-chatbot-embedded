@@ -63,11 +63,11 @@ def handle_message(event: MessageEvent):
 scheduler = BackgroundScheduler()
 
 # Existing summary job
-summary_trigger = CronTrigger(hour=4, minute=42)
+summary_trigger = CronTrigger(hour=5, minute=00)
 scheduler.add_job(summarize_emotion_and_water, summary_trigger)
 
 # New sensor data fetch job - every 1 minute
-sensor_trigger = IntervalTrigger(seconds=5)
+sensor_trigger = IntervalTrigger(minutes=1)
 def fetch_and_store_sensor_data():
     sensor_data, current_sensor_id = fetch_sensor_data()
     if sensor_data and current_sensor_id:
